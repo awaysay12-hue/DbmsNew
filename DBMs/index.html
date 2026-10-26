@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>រៀន DBMS ពីសូន្យដល់គម្រោងពិត</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3f6f4;--sf:#fff;--tx:#14231d;--mu:#5b6b64;--ac:#0d7a5f;--ac2:#e0f2ec;--bd:#d3ded9;--cd:#0f1d18;--ct:#d7f5e8;--warn:#b4491f;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1714;--sf:#15221d;--tx:#e4efe9;--mu:#92a69d;--ac:#4fd1a5;--ac2:#1b3029;--bd:#2a3d35;--cd:#08100d;--ct:#bff0dc;--warn:#f0966b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e1714;--sf:#15221d;--tx:#e4efe9;--mu:#92a69d;--ac:#4fd1a5;--ac2:#1b3029;--bd:#2a3d35;--cd:#08100d;--ct:#bff0dc;--warn:#f0966b;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.85 "Noto Sans Khmer",system-ui,sans-serif}
+.app{display:grid;grid-template-columns:270px minmax(0,1fr);grid-template-rows:auto 1fr auto;grid-template-areas:"header header" "nav main" "footer footer";min-height:100vh}
+.site-header{grid-area:header;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px clamp(16px,4vw,40px);background:var(--sf);border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:10}
+.brand{display:flex;align-items:center;gap:11px;color:var(--tx);text-decoration:none;line-height:1.35}
+.brand-mark{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:var(--ac);color:#fff;font-size:15px;font-weight:800}
+.brand strong,.brand small{display:block}
+.brand strong{font-size:16px;color:var(--ac)}
+.brand small{font-size:12px;color:var(--mu)}
+.header-meta{color:var(--mu);font-size:13px;white-space:nowrap}
+nav{grid-area:nav;background:var(--sf);border-right:1px solid var(--bd);padding:20px 14px;position:sticky;top:72px;height:calc(100vh - 72px);overflow:auto}
+#list{display:flex;flex-direction:column;gap:2px}
+nav h1{font-size:19px;line-height:1.5;margin:0 0 4px;font-weight:800;color:var(--ac)}
+nav p{margin:0 0 14px;color:var(--mu);font-size:13px;line-height:1.6}
+.bar{height:6px;background:var(--ac2);border-radius:3px;margin-bottom:16px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ac);width:0;transition:width .3s}
+nav button{display:flex;gap:10px;align-items:center;width:100%;text-align:left;background:none;border:0;color:var(--tx);font:inherit;font-size:14px;line-height:1.5;padding:9px 10px;border-radius:8px;cursor:pointer}
+nav button:hover{background:var(--ac2)}
+nav button.on{background:var(--ac);color:#fff;font-weight:600}
+nav button .n{flex:none;width:24px;height:24px;border-radius:50%;border:1.5px solid currentColor;font-size:12px;display:grid;place-items:center}
+nav button.done .n{background:var(--ac);color:#fff;border-color:var(--ac)}
+nav button.on.done .n{background:#fff;color:var(--ac)}
+main{grid-area:main;padding:32px clamp(16px,5vw,56px) 80px;max-width:860px;min-width:0}
+h2{font-size:clamp(24px,4vw,34px);line-height:1.5;margin:0 0 6px;font-weight:800}
+.sub{color:var(--mu);margin:0 0 22px}
+h3{font-size:18px;margin:26px 0 6px;color:var(--ac)}
+p,li{max-width:68ch}
+pre{background:var(--cd);color:var(--ct);padding:14px 16px;border-radius:10px;overflow-x:auto;font:13.5px/1.6 ui-monospace,Menlo,Consolas,monospace;margin:10px 0}
+code{background:var(--ac2);padding:1px 6px;border-radius:5px;font-size:.9em}
+table{border-collapse:collapse;font-size:14px;margin:10px 0;display:block;overflow-x:auto}
+th,td{border:1px solid var(--bd);padding:6px 12px;text-align:left;white-space:nowrap}
+th{background:var(--ac2)}
+.box{background:var(--sf);border:1px solid var(--bd);border-left:4px solid var(--ac);border-radius:8px;padding:12px 16px;margin:16px 0}
+.box.w{border-left-color:var(--warn)}
+.lab{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:16px;margin:22px 0}
+.lab textarea{width:100%;min-height:76px;background:var(--cd);color:var(--ct);border:0;border-radius:8px;padding:10px;font:14px/1.5 ui-monospace,Menlo,monospace;resize:vertical}
+.btn{background:var(--ac);color:#fff;border:0;border-radius:8px;padding:8px 18px;font:inherit;font-size:14px;cursor:pointer;margin:8px 8px 0 0}
+.btn.g{background:var(--ac2);color:var(--ac)}
+.btn:focus-visible,nav button:focus-visible,.q button:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
+.out{margin-top:8px;font-size:13px;color:var(--mu)}
+.q{margin-top:28px;padding:16px;background:var(--sf);border:1px solid var(--bd);border-radius:12px}
+.q button{display:block;width:100%;text-align:left;margin:6px 0;padding:9px 12px;border-radius:8px;border:1.5px solid var(--bd);background:none;color:var(--tx);font:inherit;font-size:14.5px;cursor:pointer}
+.q button.ok{border-color:var(--ac);background:var(--ac2)}
+.q button.no{border-color:var(--warn)}
+.step{display:flex;gap:10px;align-items:flex-start;margin:6px 0}
+.step input{margin-top:9px;accent-color:var(--ac);width:18px;height:18px}
+.site-footer{grid-area:footer;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px clamp(16px,4vw,40px);background:var(--sf);border-top:1px solid var(--bd);color:var(--mu);font-size:13px}
+.site-footer a{color:var(--ac);font-weight:600;text-decoration:none}
+.site-footer a:hover{text-decoration:underline}
+.btn:focus-visible,nav button:focus-visible,.q button:focus-visible,.brand:focus-visible,.site-footer a:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
+@media (max-width:780px){.app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto 1fr auto;grid-template-areas:"header" "nav" "main" "footer"}nav{top:72px;height:auto;border-right:0;border-bottom:1px solid var(--bd);padding:10px 12px;overflow:hidden}nav h1,nav p,.bar{display:none}#list{flex-direction:row;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;padding-bottom:2px}nav button{white-space:nowrap;width:auto;flex:none}}
+@media (max-width:560px){.site-header{padding:8px 12px;gap:8px}.brand-mark{width:38px;height:38px}.brand strong{font-size:14px}.brand small{font-size:11px}.header-meta{font-size:11px}body{font-size:15px}main{padding:20px 14px 36px}h2{font-size:clamp(22px,7vw,28px)}.sub{margin-bottom:18px}nav{padding:8px}nav button{padding:8px 10px;font-size:13px;min-height:40px}.btn{padding:9px 14px;font-size:13px;display:inline-block}.lab,.q{padding:12px}.lab textarea{min-height:90px}.q button{padding:10px 12px}.step{gap:8px}.step span{display:block}.box,.lab,.q{border-radius:10px}.out{font-size:12px}table th,table td{padding:5px 8px;font-size:12px}#main > p{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}.site-footer{align-items:flex-start;flex-direction:column;gap:4px;padding:12px 14px;font-size:12px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="site-header" id="top">
+  <a class="brand" href="#top" aria-label="រៀន DBMS ទៅកំពូលទំព័រ"><span class="brand-mark" aria-hidden="true">DB</span><span><strong>រៀន DBMS</strong><small>ពីសូន្យដល់គម្រោងពិត</small></span></a>
+  <div class="header-meta" id="lesson-count" aria-live="polite">មេរៀន ១ / ៨</div>
+</header>
+<nav id="nav" aria-label="បញ្ជីមេរៀន"><h1>រៀន DBMS<br>ពីសូន្យដល់គម្រោងពិត</h1><p>៨ មេរៀន · អនុវត្ត SQL ផ្ទាល់ · គម្រោងប្រព័ន្ធបណ្ណាល័យ</p><div class="bar" role="progressbar" aria-label="វឌ្ឍនភាពមេរៀន" aria-valuemin="0" aria-valuemax="100"><i id="pg"></i></div><div id="list"></div></nav>
+<main id="main"></main>
+<footer class="site-footer"><span>វគ្គសិក្សា DBMS · រៀនតាមល្បឿនរបស់អ្នក</span><a href="#top">ត្រឡប់ទៅខាងលើ ↑</a></footer>
+</div>
+<script>
+(() => {
+  const L = [
+    {
+      t: "DBMS ជាអ្វី?",
+      s: "យល់ពីមូលដ្ឋានទិន្នន័យ និងហេតុអ្វីយើងត្រូវការវា",
+      h: `<p><b>មូលដ្ឋានទិន្នន័យ (Database)</b> គឺជាការប្រមូលផ្តុំទិន្នន័យដែលទាក់ទងគ្នា។ <b>DBMS</b> (Database Management System) គឺជាកម្មវិធីដែលជួយបង្កើត រក្សាទុក ស្វែងរក និងការពារទិន្នន័យនោះ។</p>
+<h3>ហេតុអ្វីមិនប្រើ Excel ឬឯកសារធម្មតា?</h3>
+<ul><li>ទិន្នន័យស្ទួន និងមិនស៊ីសង្វាក់គ្នា</li><li>អ្នកប្រើច្រើននាក់កែព្រមគ្នាមិនបាន</li><li>ស្វែងរកទិន្នន័យរាប់លានជួរយឺត</li><li>គ្មានសិទ្ធិចូលប្រើ និងការបម្រុងទុកដែលមានសុវត្ថិភាព</li></ul>
+<h3>ប្រភេទ DBMS</h3>
+<table><tr><th>ប្រភេទ</th><th>ឧទាហរណ៍</th><th>ប្រើសម្រាប់</th></tr><tr><td>Relational (SQL)</td><td>MySQL, PostgreSQL, SQLite</td><td>ធនាគារ ហាងលក់ ប្រព័ន្ធសាលា</td></tr><tr><td>Document</td><td>MongoDB</td><td>ទិន្នន័យបត់បែន</td></tr><tr><td>Key-Value</td><td>Redis</td><td>Cache ល្បឿនលឿន</td></tr><tr><td>Graph</td><td>Neo4j</td><td>បណ្តាញមិត្តភក្តិ</td></tr></table>
+<div class="box">មេរៀននេះផ្តោតលើ <b>Relational DBMS</b> និងភាសា <b>SQL</b> ព្រោះប្រើទូលំទូលាយបំផុត។</div>`,
+      q: ["តួនាទីសំខាន់របស់ DBMS គឺអ្វី?", ["គ្រប់គ្រង រក្សាទុក និងការពារទិន្នន័យ", "គ្រាន់តែគូរក្រាហ្វិក", "បង្កើតគេហទំព័រ"], 0]
+    },
+    {
+      t: "ម៉ូដែល ER",
+      s: "រចនាមូលដ្ឋានទិន្នន័យមុនសរសេរកូដ",
+      h: `<p><b>ER Diagram</b> (Entity-Relationship) គឺជាផែនទីបង្ហាញថាតើយើងមានទិន្នន័យអ្វីខ្លះ និងទាក់ទងគ្នាយ៉ាងដូចម្តេច។</p>
+<h3>ធាតុសំខាន់ៗ</h3>
+<ul><li><b>Entity</b> — វត្ថុដែលយើងចង់ទុកទិន្នន័យ ដូចជា សិស្ស, សៀវភៅ</li><li><b>Attribute</b> — លក្ខណៈរបស់វា ដូចជា ឈ្មោះ, ថ្ងៃកំណើត</li><li><b>Relationship</b> — ទំនាក់ទំនងរវាង Entity ដូចជា "សិស្ស - មុខវិជ្ជា"</li></ul>
+<h3>ប្រភេទទំនាក់ទំនង (Cardinality)</h3>
+<table><tr><th>ប្រភេទ</th><th>ន័យ</th><th>ឧទាហរណ៍</th></tr><tr><td>1 : 1</td><td>មួយទល់មួយ</td><td>មនុស្ស – លិខិតឆ្លងដែន</td></tr><tr><td>1 : N</td><td>មួយទល់ច្រើន</td><td>ថ្នាក់ – សិស្ស</td></tr><tr><td>M : N</td><td>ច្រើនទល់ច្រើន</td><td>សិស្ស – មុខវិជ្ជា</td></tr></table>
+<div class="box">ទំនាក់ទំនង M:N ត្រូវបំបែកជាតារាងកណ្តាល (junction table) នៅពេលបម្លែងទៅជាតារាង។</div>`,
+      q: ["សិស្សច្រើននាក់ ចុះឈ្មោះមុខវិជ្ជាច្រើន គឺទំនាក់ទំនងប្រភេទអ្វី?", ["1 : 1", "1 : N", "M : N"], 2]
+    },
+    {
+      t: "តារាង និង Key",
+      s: "Relational Model — Primary Key, Foreign Key",
+      h: `<p>ក្នុង Relational Model ទិន្នន័យត្រូវរក្សាទុកជា <b>តារាង</b> (table) ដែលមាន <b>ជួរឈរ</b> (column) និង <b>ជួរដេក</b> (row)។</p>
+<table><tr><th>id</th><th>name</th><th>class_id</th></tr><tr><td>1</td><td>សុខា</td><td>10</td></tr><tr><td>2</td><td>ដារ៉ា</td><td>10</td></tr></table>
+<h3>ប្រភេទ Key</h3>
+<ul><li><b>Primary Key (PK)</b> — តម្លៃតែមួយគត់ កំណត់អត្តសញ្ញាណជួរដេក (ដូចជា id)</li><li><b>Foreign Key (FK)</b> — ជួរឈរដែលចង្អុលទៅ PK នៃតារាងផ្សេង ដើម្បីតភ្ជាប់តារាង</li><li><b>Unique</b> — មិនឲ្យស្ទួន ប៉ុន្តែមិនមែនជា PK ដូចជា email</li></ul>
+<div class="box w">PK មិនអាចទទេ (NULL) ឬស្ទួនបានទេ។ FK ត្រូវតែត្រូវនឹងតម្លៃដែលមានពិតក្នុងតារាងដែលវាចង្អុលទៅ (Referential Integrity)។</div>`,
+      q: ["Foreign Key ប្រើសម្រាប់អ្វី?", ["ធ្វើឲ្យតារាងលឿនជាង", "តភ្ជាប់តារាងមួយទៅតារាងមួយទៀត", "លុបទិន្នន័យស្ទួន"], 1]
+    },
+    {
+      t: "SQL មូលដ្ឋាន",
+      s: "CREATE, INSERT, SELECT, UPDATE, DELETE — សាកល្បងផ្ទាល់",
+      lab: 1,
+      h: `<p><b>SQL</b> (Structured Query Language) គឺជាភាសាសម្រាប់និយាយជាមួយ DBMS។ ចែកជាពីរក្រុមធំ៖ <b>DDL</b> កំណត់រចនាសម្ព័ន្ធ និង <b>DML</b> គ្រប់គ្រងទិន្នន័យ។</p>
+<pre>-- DDL: បង្កើតតារាង
+CREATE TABLE students (
+  id INT PRIMARY KEY,
+  name VARCHAR(50) NOT NULL,
+  age INT,
+  city VARCHAR(30)
+);
+
+-- DML
+INSERT INTO students VALUES (1,'សុខា',20,'ភ្នំពេញ');
+SELECT name, age FROM students WHERE age >= 20 ORDER BY age DESC;
+UPDATE students SET city='សៀមរាប' WHERE id=1;
+DELETE FROM students WHERE id=1;</pre>
+<div class="box w">កុំភ្លេច <code>WHERE</code> ពេលប្រើ UPDATE ឬ DELETE បើមិនដូច្នោះទេ វាប៉ះពាល់គ្រប់ជួរដេកទាំងអស់!</div>
+<h3>សាកល្បងខាងក្រោម</h3><p>តារាង <code>students</code> មានទិន្នន័យរួចហើយ។ សាកល្បង <code>SELECT</code> ជាមួយ <code>WHERE</code>, <code>ORDER BY</code>, <code>LIMIT</code>។</p>`,
+      q: ["ពាក្យបញ្ជាណាប្រើដើម្បីទាញទិន្នន័យមកមើល?", ["INSERT", "SELECT", "DROP"], 1]
+    },
+    {
+      t: "JOIN និង Aggregate",
+      s: "ភ្ជាប់តារាង និងគណនាសរុប",
+      h: `<p>ទិន្នន័យពិតតែងនៅក្នុងតារាងច្រើន។ <b>JOIN</b> ជួយភ្ជាប់វាតាម FK។</p>
+<pre>SELECT s.name, c.title
+FROM students s
+INNER JOIN enrollments e ON s.id = e.student_id
+INNER JOIN courses c ON c.id = e.course_id;</pre>
+<table><tr><th>JOIN</th><th>លទ្ធផល</th></tr><tr><td>INNER</td><td>តែជួរដែលត្រូវគ្នាទាំងពីរតារាង</td></tr><tr><td>LEFT</td><td>ទាំងអស់ពីតារាងឆ្វេង + ដែលត្រូវគ្នាពីស្តាំ</td></tr><tr><td>RIGHT</td><td>បញ្ច្រាសនៃ LEFT</td></tr></table>
+<h3>Aggregate Functions</h3>
+<pre>SELECT city, COUNT(*) AS total, AVG(age) AS avg_age
+FROM students
+GROUP BY city
+HAVING COUNT(*) > 2;</pre>
+<p><code>COUNT</code>, <code>SUM</code>, <code>AVG</code>, <code>MIN</code>, <code>MAX</code> — ប្រើជាមួយ <code>GROUP BY</code>។ ចំណែក <code>HAVING</code> ត្រងក្រុមក្រោយគណនា (ខណៈ <code>WHERE</code> ត្រងមុនគណនា)។</p>`,
+      q: ["ពាក្យណាត្រងលទ្ធផលក្រោយ GROUP BY?", ["WHERE", "HAVING", "LIMIT"], 1]
+    },
+    {
+      t: "Normalization",
+      s: "កាត់បន្ថយទិន្នន័យស្ទួន",
+      h: `<p><b>Normalization</b> គឺដំណើរការរៀបចំតារាងដើម្បីកាត់បន្ថយការស្ទួន និងកំហុសពេលកែប្រែទិន្នន័យ។</p>
+<h3>ទម្រង់ធម្មតា</h3>
+<ul><li><b>1NF</b> — ក្រឡានីមួយៗមានតម្លៃតែមួយ (មិនដាក់ "A, B, C" ក្នុងក្រឡាតែមួយ)</li><li><b>2NF</b> — ជួរឈរមិនមែន key ត្រូវពឹងលើ PK ទាំងមូល (មិនមែនតែផ្នែកណាមួយ)</li><li><b>3NF</b> — ជួរឈរមិនមែន key មិនពឹងលើជួរឈរមិនមែន key ផ្សេងទៀត</li></ul>
+<h3>មុន និង ក្រោយ</h3>
+<table><tr><th>order_id</th><th>customer</th><th>phone</th><th>product</th></tr><tr><td>1</td><td>សុខា</td><td>012…</td><td>សៀវភៅ</td></tr><tr><td>2</td><td>សុខា</td><td>012…</td><td>ប៊ិច</td></tr></table>
+<p>លេខទូរស័ព្ទស្ទួន ➜ បំបែកជាតារាង <code>customers</code> និង <code>orders</code> ហើយភ្ជាប់ដោយ <code>customer_id</code>។</p>
+<div class="box">ក្នុងការអនុវត្តជាក់ស្តែង ភាគច្រើនគ្រាន់តែដល់ 3NF គឺគ្រប់គ្រាន់ហើយ។</div>`,
+      q: ["គោលបំណងសំខាន់នៃ Normalization?", ["ធ្វើឲ្យតារាងធំជាងមុន", "កាត់បន្ថយទិន្នន័យស្ទួន", "លុបគ្រប់ Key"], 1]
+    },
+    {
+      t: "Index និង Transaction",
+      s: "ល្បឿន និងសុវត្ថិភាពទិន្នន័យ",
+      h: `<h3>Index</h3>
+<p>Index ដូចសន្ទស្សន៍នៅចុងសៀវភៅ ជួយស្វែងរកលឿន ដោយមិនចាំបាច់អានគ្រប់ជួរ។</p>
+<pre>CREATE INDEX idx_students_city ON students(city);</pre>
+<p>ប៉ុន្តែ Index ធ្វើឲ្យ INSERT/UPDATE យឺតបន្តិច និងចំណាយទំហំ — ដាក់តែលើជួរឈរដែលស្វែងរកញឹកញាប់។</p>
+<h3>Transaction និង ACID</h3>
+<p>Transaction គឺក្រុមប្រតិបត្តិការដែលត្រូវសម្រេចទាំងអស់ ឬបរាជ័យទាំងអស់ ឧទាហរណ៍ផ្ទេរប្រាក់៖</p>
+<pre>BEGIN;
+UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+UPDATE accounts SET balance = balance + 100 WHERE id = 2;
+COMMIT;  -- ឬ ROLLBACK បើមានកំហុស</pre>
+<table><tr><th>ACID</th><th>ន័យ</th></tr><tr><td>Atomicity</td><td>ទាំងអស់ ឬគ្មានអ្វីសោះ</td></tr><tr><td>Consistency</td><td>ទិន្នន័យនៅត្រឹមត្រូវតាមច្បាប់</td></tr><tr><td>Isolation</td><td>Transaction មិនរំខានគ្នា</td></tr><tr><td>Durability</td><td>COMMIT ហើយមិនបាត់ទោះដាច់ភ្លើង</td></tr></table>`,
+      q: ["បើជំហានទី២ នៃការផ្ទេរប្រាក់ បរាជ័យ យើងគួរធ្វើអ្វី?", ["COMMIT", "ROLLBACK", "CREATE INDEX"], 1]
+    },
+    {
+      t: "គម្រោងពិត៖ បណ្ណាល័យ",
+      s: "បង្កើតប្រព័ន្ធគ្រប់គ្រងបណ្ណាល័យពីដើមដល់ចប់",
+      proj: 1,
+      h: `<p>យើងនឹងបង្កើតមូលដ្ឋានទិន្នន័យ <b>Library Management System</b> ដោយប្រើអ្វីដែលបានរៀន។ អ្នកអាចប្រើ <b>SQLite</b> (ងាយបំផុត) ឬ MySQL / PostgreSQL។ ធីកជំហាននីមួយៗពេលធ្វើរួច។</p>
+<h3>ជំហាន ១ — វិភាគតម្រូវការ</h3>
+<p>បណ្ណារក្សត្រូវកត់ត្រា៖ សមាជិក សៀវភៅ និងការខ្ចី/សង។ សៀវភៅមួយក្បាលមានច្បាប់ចម្លងច្រើន។</p>
+<h3>ជំហាន ២ — ER និង Schema</h3>
+<table><tr><th>តារាង</th><th>ជួរឈរសំខាន់</th></tr><tr><td>members</td><td>id (PK), name, phone</td></tr><tr><td>categories</td><td>id (PK), name</td></tr><tr><td>books</td><td>id (PK), title, author, category_id (FK), copies</td></tr><tr><td>loans</td><td>id (PK), member_id (FK), book_id (FK), loan_date, return_date</td></tr></table>
+<h3>ជំហាន ៣ — បង្កើតតារាង</h3>
+<pre>CREATE TABLE members (
+  id INTEGER PRIMARY KEY,
+  name TEXT NOT NULL,
+  phone TEXT UNIQUE
+);
+CREATE TABLE categories (
+  id INTEGER PRIMARY KEY,
+  name TEXT NOT NULL
+);
+CREATE TABLE books (
+  id INTEGER PRIMARY KEY,
+  title TEXT NOT NULL,
+  author TEXT,
+  category_id INTEGER REFERENCES categories(id),
+  copies INTEGER DEFAULT 1 CHECK (copies >= 0)
+);
+CREATE TABLE loans (
+  id INTEGER PRIMARY KEY,
+  member_id INTEGER NOT NULL REFERENCES members(id),
+  book_id INTEGER NOT NULL REFERENCES books(id),
+  loan_date DATE DEFAULT CURRENT_DATE,
+  return_date DATE
+);
+CREATE INDEX idx_loans_member ON loans(member_id);</pre>
+<h3>ជំហាន ៤ — បញ្ចូលទិន្នន័យ</h3>
+<pre>INSERT INTO categories (name) VALUES ('បច្ចេកវិទ្យា'),('ប្រលោមលោក');
+INSERT INTO members (name, phone) VALUES ('សុខា','012111222'),('ដារ៉ា','097333444');
+INSERT INTO books (title, author, category_id, copies)
+VALUES ('រៀន SQL','វិចិត្រ',1,3),('កំណាព្យខ្មែរ','សុភា',2,2);</pre>
+<h3>ជំហាន ៥ — ខ្ចី និងសង (Transaction)</h3>
+<pre>BEGIN;
+INSERT INTO loans (member_id, book_id) VALUES (1, 1);
+UPDATE books SET copies = copies - 1 WHERE id = 1;
+COMMIT;
+
+-- សង
+UPDATE loans SET return_date = CURRENT_DATE WHERE id = 1;
+UPDATE books SET copies = copies + 1 WHERE id = 1;</pre>
+<h3>ជំហាន ៦ — សំណួររបាយការណ៍</h3>
+<pre>-- សៀវភៅដែលកំពុងខ្ចី
+SELECT m.name, b.title, l.loan_date
+FROM loans l
+JOIN members m ON m.id = l.member_id
+JOIN books b ON b.id = l.book_id
+WHERE l.return_date IS NULL;
+
+-- សៀវភៅពេញនិយម
+SELECT b.title, COUNT(*) AS times
+FROM loans l JOIN books b ON b.id = l.book_id
+GROUP BY b.id ORDER BY times DESC LIMIT 5;</pre>
+<div class="box"><b>បន្ថែមខ្លួនឯង៖</b> ថ្ងៃកំណត់សង និងប្រាក់ពិន័យ, តារាងអ្នកនិពន្ធ (M:N), ហើយភ្ជាប់ទៅកម្មវិធីតាម Python / PHP / Node.js។</div>`,
+      q: ["ហេតុអ្វីត្រូវប្រើ Transaction ពេលខ្ចីសៀវភៅ?", ["ដើម្បីឲ្យការបញ្ចូល loan និងការកាត់ copies កើតឡើងជាមួយគ្នា", "ដើម្បីបង្កើតតារាង", "ដើម្បីប្តូរឈ្មោះសៀវភៅ"], 0]
+    }
+  ];
+
+  const DB = {
+    students: [
+      { id: 1, name: "សុខា", age: 20, city: "ភ្នំពេញ" },
+      { id: 2, name: "ដារ៉ា", age: 22, city: "សៀមរាប" },
+      { id: 3, name: "ចាន់ធី", age: 19, city: "ភ្នំពេញ" },
+      { id: 4, name: "វិចិត្រ", age: 24, city: "បាត់ដំបង" },
+      { id: 5, name: "ស្រីល័ក្ខ", age: 21, city: "សៀមរាប" }
+    ]
+  };
+
+  let cur = 0;
+  let done = {};
+  let chk = {};
+
+  try {
+    const savedDone = JSON.parse(localStorage.getItem("dbms_done") || "{}");
+    const savedChk = JSON.parse(localStorage.getItem("dbms_chk") || "{}");
+    if (savedDone && typeof savedDone === "object") done = savedDone;
+    if (savedChk && typeof savedChk === "object") chk = savedChk;
+  } catch (error) {
+    // Ignore localStorage failures such as private browsing restrictions.
+  }
+
+  const save = () => {
+    try {
+      localStorage.setItem("dbms_done", JSON.stringify(done));
+      localStorage.setItem("dbms_chk", JSON.stringify(chk));
+    } catch (error) {
+      // Ignore localStorage failures.
+    }
+  };
+
+  function runSQL(sql) {
+    const cleaned = String(sql || "").trim().replace(/;\s*$/i, "");
+    if (!cleaned) throw new Error("សូមបញ្ចូល SQL");
+
+    const match = cleaned.match(/^select\s+(.+?)\s+from\s+(\w+)(?:\s+where\s+(\w+)\s*(>=|<=|!=|=|>|<)\s*('?[^']*'?|\S+?))?(?:\s+order\s+by\s+(\w+)(?:\s+(asc|desc))?)?(?:\s+limit\s+(\d+))?$/i);
+    if (!match) throw new Error("គាំទ្រតែ SELECT … FROM … [WHERE] [ORDER BY] [LIMIT] ប៉ុណ្ណោះ");
+
+    const [, cols, tableName, wc, op, valRaw, ob, dir, lim] = match;
+    const table = DB[tableName.toLowerCase()];
+    if (!table) throw new Error("រកមិនឃើញតារាង " + tableName + " (មានតែ students)");
+
+    let rows = table.slice();
+
+    if (wc) {
+      const value = String(valRaw || "").replace(/^'|'$/g, "");
+      const numeric = !Number.isNaN(Number(value)) && value !== "";
+      const target = numeric ? Number(value) : value;
+      rows = rows.filter((row) => {
+        const actual = row[wc];
+        if (actual === undefined) throw new Error("គ្មានជួរឈរ " + wc);
+        const comparisons = {
+          "=": actual == target,
+          "!=": actual != target,
+          ">": actual > target,
+          "<": actual < target,
+          ">=": actual >= target,
+          "<=": actual <= target
+        };
+        return comparisons[op];
+      });
+    }
+
+    if (ob) {
+      rows.sort((a, b) => {
+        const aVal = a[ob];
+        const bVal = b[ob];
+        if (aVal === bVal) return 0;
+        return aVal > bVal ? 1 : -1;
+      });
+      if (/desc/i.test(dir || "")) rows.reverse();
+    }
+
+    if (lim) rows = rows.slice(0, Number(lim));
+
+    const row0 = table[0] || {};
+    const keys = cols.trim() === "*"
+      ? Object.keys(row0)
+      : cols.split(",").map((s) => s.trim()).filter(Boolean);
+
+    if (!keys.length) throw new Error("ត្រូវមានជួរឈរ ឬ *");
+    keys.forEach((key) => {
+      if (!(key in row0)) throw new Error("គ្មានជួរឈរ " + key);
+    });
+
+    return {
+      keys,
+      rows: rows.map((row) => keys.map((key) => row[key]))
+    };
+  }
+
+  function render() {
+    const list = document.getElementById("list");
+    const pg = document.getElementById("pg");
+    const main = document.getElementById("main");
+    if (!list || !pg || !main) return;
+
+    const lesson = L[Math.min(Math.max(cur, 0), L.length - 1)] || L[0];
+
+    list.innerHTML = L.map((item, index) => `
+      <button data-i="${index}" class="${index === cur ? "on" : ""} ${done[index] ? "done" : ""}" ${index === cur ? 'aria-current="step"' : ""}>
+        <span class="n">${done[index] ? "✓" : index + 1}</span>${item.t}
+      </button>
+    `).join("");
+
+    pg.style.width = (Object.keys(done).length / L.length * 100) + "%";
+    pg.parentElement.setAttribute("aria-valuenow", String(Math.round(Object.keys(done).length / L.length * 100)));
+    document.getElementById("lesson-count").textContent = `មេរៀន ${cur + 1} / ${L.length}`;
+
+    let html = `<h2>${lesson.t}</h2><p class="sub">${lesson.s}</p>${lesson.h || ""}`;
+
+    if (lesson.lab) {
+      html += `<div class="lab"><b>SQL Lab</b> — តារាង <code>students(id, name, age, city)</code><textarea id="sql" spellcheck="false">SELECT name, age FROM students WHERE age >= 20 ORDER BY age DESC;</textarea><button class="btn" id="run">ដំណើរការ</button><button class="btn g" id="all">មើលទិន្នន័យទាំងអស់</button><div class="out" id="res"></div></div>`;
+    }
+
+    if (lesson.proj) {
+      const steps = [
+        "គូរ ER Diagram លើក្រដាស ឬ draw.io",
+        "បង្កើតតារាងទាំង ៤ ដោយ SQL",
+        "បញ្ចូលទិន្នន័យគំរូយ៉ាងតិច ៥ ជួរក្នុងតារាងនីមួយៗ",
+        "សាកល្បង Transaction ខ្ចី និងសង",
+        "សរសេរសំណួររបាយការណ៍ ២ ដែលខុសពីឧទាហរណ៍",
+        "បន្ថែមមុខងារថ្មីមួយ (ថ្ងៃកំណត់សង ឬពិន័យ)"
+      ];
+      html += `<div class="lab"><b>បញ្ជីពិនិត្យគម្រោងរបស់អ្នក</b>${steps.map((step, index) => `<label class="step"><input type="checkbox" data-c="${index}" ${chk[index] ? "checked" : ""}><span>${step}</span></label>`).join("")}</div>`;
+    }
+
+    const question = Array.isArray(lesson.q) && lesson.q.length >= 3 ? lesson.q : ["សំណួរសាកល្បង:", [], 0];
+    const [qText, options, correctIndex] = question;
+    html += `<div class="q"><b>សំណួរសាកល្បង៖</b> ${qText}${(options || []).map((item, index) => `<button data-o="${index}">${item}</button>`).join("")}<div class="out" id="fb"></div></div>`;
+    html += `<p>${cur > 0 ? '<button class="btn g" id="pv">‹ មេរៀនមុន</button>' : ""}${cur < L.length - 1 ? '<button class="btn" id="nx">មេរៀនបន្ទាប់ ›</button>' : ""}</p>`;
+    main.innerHTML = html;
+
+    const show = (result) => {
+      const res = document.getElementById("res");
+      if (!res) return;
+      if (result.err) {
+        res.style.color = "var(--warn)";
+        res.textContent = result.err;
+        return;
+      }
+      res.style.color = "";
+      res.innerHTML = `<table><tr>${(result.keys || []).map((key) => `<th>${key}</th>`).join("")}</tr>${(result.rows || []).map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`).join("") || "<tr><td>គ្មានលទ្ធផល</td></tr>"}</table>${(result.rows || []).length} ជួរ`;
+    };
+
+    if (lesson.lab) {
+      const runBtn = document.getElementById("run");
+      const allBtn = document.getElementById("all");
+      if (runBtn) {
+        runBtn.onclick = () => {
+          try {
+            show(runSQL(document.getElementById("sql").value));
+          } catch (error) {
+            show({ err: error.message });
+          }
+        };
+      }
+      if (allBtn) {
+        allBtn.onclick = () => {
+          const sqlInput = document.getElementById("sql");
+          if (sqlInput) sqlInput.value = "SELECT * FROM students;";
+          if (runBtn) runBtn.click();
+        };
+      }
+    }
+
+    main.querySelectorAll("[data-c]").forEach((element) => {
+      element.onchange = () => {
+        chk[element.dataset.c] = element.checked;
+        save();
+      };
+    });
+
+    main.querySelectorAll(".q [data-o]").forEach((button) => {
+      button.onclick = () => {
+        const isCorrect = Number(button.dataset.o) === correctIndex;
+        button.classList.add(isCorrect ? "ok" : "no");
+        const fb = document.getElementById("fb");
+        if (fb) {
+          fb.textContent = isCorrect ? "ត្រឹមត្រូវ! មេរៀននេះត្រូវបានកត់ត្រាថាបានបញ្ចប់។" : "មិនទាន់ត្រូវទេ សាកល្បងម្តងទៀត។";
+        }
+        if (isCorrect) {
+          done[cur] = 1;
+          save();
+          pg.style.width = (Object.keys(done).length / L.length * 100) + "%";
+          pg.parentElement.setAttribute("aria-valuenow", String(Math.round(Object.keys(done).length / L.length * 100)));
+          const navButton = document.querySelector(`nav [data-i="${cur}"]`);
+          if (navButton) {
+            navButton.classList.add("done");
+            navButton.querySelector(".n").textContent = "✓";
+          }
+        }
+      };
+    });
+
+    const go = (step) => {
+      cur += step;
+      render();
+      window.scrollTo(0, 0);
+    };
+
+    const nextButton = document.getElementById("nx");
+    const prevButton = document.getElementById("pv");
+    if (nextButton) nextButton.onclick = () => go(1);
+    if (prevButton) prevButton.onclick = () => go(-1);
+
+    document.querySelectorAll("nav [data-i]").forEach((button) => {
+      button.onclick = () => {
+        cur = Number(button.dataset.i);
+        render();
+        window.scrollTo(0, 0);
+      };
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", render, { once: true });
+  } else {
+    render();
+  }
+})();
+</script>
+</body>
+</html>
